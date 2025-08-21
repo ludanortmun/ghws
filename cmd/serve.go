@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO: Add support for multiple mappings in CLI
 // TODO: Add support for external config files
-// TODO: Support for customizing port
+
+var port int
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -31,6 +32,7 @@ If the URL contains a tag or commit hash, the files served will be pinned to tha
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the server on")
 }
 
 func startServer(url string) {
@@ -48,8 +50,10 @@ func startServer(url string) {
 
 	fetcher := internal.NewGitHubAPIFetcher(client)
 	server := &http.Server{
-		Addr: ":8080",
+		Addr: fmt.Sprintf("localhost:%d", port),
 	}
+
+	log.Printf("Starting server on http://%s", server.Addr)
 
 	target, err := internal.InferTargetFromUrl(url)
 	if err != nil {
