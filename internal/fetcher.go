@@ -38,7 +38,7 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 
 	if err != nil {
 		// Special case for not found error
-		if strings.Contains(err.Error(), NotFoundError) {
+		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New(NotFoundError)
 		}
 
