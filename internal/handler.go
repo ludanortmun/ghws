@@ -29,15 +29,22 @@ func (h *GitHubHandler) AddRootSite(target GitHubTarget) *GitHubHandler {
 	return h.AddSite("/", target)
 }
 
-func (h *GitHubHandler) AddSite(prefix string, target GitHubTarget) *GitHubHandler {
-	if !strings.HasSuffix(prefix, "/") {
-		prefix += "/"
+func (h *GitHubHandler) AddSite(route string, target GitHubTarget) *GitHubHandler {
+	if !strings.HasPrefix(route, "/") {
+		route = "/" + route
 	}
-	if _, exists := h.sites[prefix]; exists {
-		log.Printf("Warning: Overwriting existing site for prefix %s", prefix)
+	if _, exists := h.sites[route]; exists {
+		log.Printf("Warning: Overwriting existing site for route %s", route)
 	}
-	h.sites[prefix] = target
-	log.Printf("Added site with prefix %s for Repository %s", prefix, target.Repository)
+	h.sites[route] = target
+
+	ref := target.ref
+	if ref == "" {
+		ref = "default branch"
+	}
+
+	log.Printf("Added site with route %s, targetting (%s) %s/%s/%s",
+		route, ref, target.owner, target.repository, target.directory)
 
 	return h
 }
@@ -62,10 +69,10 @@ func (h *GitHubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if strings.Contains(err.Error(), NotFoundError) {
-			log.Printf("File not found: %s in repository %s", path, target.Repository)
+			log.Printf("File not found: %s in repository %s", path, target.repository)
 			http.Error(w, "Not Found", http.StatusNotFound)
 		} else {
-			log.Printf("Error fetching %s from %s: %v", path, target.Repository, err)
+			log.Printf("Error fetching %s from %s: %v", path, target.repository, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	}
