@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/google/go-github/v74/github"
@@ -28,13 +29,12 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 		Ref: target.ref,
 	}
 
-	file, _, _, err := f.client.Repositories.GetContents(
+	c, res, err := f.client.Repositories.DownloadContents(
 		context.Background(),
 		target.owner,
 		target.repository,
 		fullPath,
-		opts,
-	)
+		opts)
 
 	if err != nil {
 		// Special case for not found error
@@ -45,10 +45,17 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 		return nil, err
 	}
 
-	contents, err := file.GetContent()
+	if res.StatusCode > 299 {
+		if res.StatusCode == 404 {
+			return nil, errors.New(NotFoundError)
+		}
+		return nil, fmt.Errorf("failed to fetch content: %s", res.Status)
+	}
+
+	content, err := io.ReadAll(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(contents), nil
+	return content, nil
 }

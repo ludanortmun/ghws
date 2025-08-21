@@ -63,8 +63,6 @@ func (h *GitHubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = ensureExtension(path)
 	ext := path[strings.LastIndex(path, "."):]
 
-	log.Println("Will fetch:", path)
-
 	bodyBytes, err := h.fetcher.Fetch(*target, path)
 
 	if err != nil {
