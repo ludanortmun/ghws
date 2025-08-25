@@ -5,12 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-github/v74/github"
 )
 
 const NotFoundError = "not found"
+
+// Error message from the GitHub API when a file is not found
+var notFoundRegex = regexp.MustCompile(`no file named .+ found in .+`)
 
 type ApiFetcher struct {
 	client *github.Client
@@ -38,7 +42,7 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 
 	if err != nil {
 		// Special case for not found error
-		if strings.Contains(err.Error(), "404 Not Found") {
+		if notFoundRegex.MatchString(err.Error()) {
 			return nil, errors.New(NotFoundError)
 		}
 

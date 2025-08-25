@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"net/url"
 	"strings"
 )
 
@@ -18,11 +19,16 @@ type GitHubTarget struct {
 // - "<ref>" can either be a commit hash or branch
 // - "<path>/<to>/<root>" is optional
 // - If "<path>/<to>/<root>" is present, then "tree/<ref>" MUST be present
-func InferTargetFromUrl(url string) (GitHubTarget, error) {
+func InferTargetFromUrl(githubUrl string) (GitHubTarget, error) {
 	target := GitHubTarget{}
 
-	_url, ok := strings.CutPrefix(url, "https://github.com/")
+	_url, ok := strings.CutPrefix(githubUrl, "https://github.com/")
 	if !ok {
+		return GitHubTarget{}, errors.New(`invalid GitHub URL`)
+	}
+
+	_url, err := url.QueryUnescape(_url)
+	if err != nil {
 		return GitHubTarget{}, errors.New(`invalid GitHub URL`)
 	}
 
