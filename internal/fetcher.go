@@ -13,7 +13,7 @@ import (
 
 const NotFoundError = "not found"
 
-// Error message from the GitHub API when a file is not found
+// Error message from the GitHub API when a file is not found inside a directory that does exist
 var notFoundRegex = regexp.MustCompile(`no file named .+ found in .+`)
 
 type ApiFetcher struct {
@@ -42,7 +42,7 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 
 	if err != nil {
 		// Special case for not found error
-		if notFoundRegex.MatchString(err.Error()) {
+		if isNotFoundError(err) {
 			return nil, errors.New(NotFoundError)
 		}
 
@@ -62,4 +62,10 @@ func (f *ApiFetcher) Fetch(target GitHubTarget, path string) ([]byte, error) {
 	}
 
 	return content, nil
+}
+
+func isNotFoundError(err error) bool {
+	// The regex catches errors returned by GitHub when the directory exists but the file does not.
+	// The strings.Contains part catches errors when the directory itself does not exist.
+	return notFoundRegex.MatchString(err.Error()) || strings.Contains(err.Error(), "Not Found")
 }
